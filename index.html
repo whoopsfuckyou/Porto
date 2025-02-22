@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draggable Photo Gallery</title>
+    <title>Interactive Photo Gallery</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
     <style>
-        body {
+        /* Prevent scrolling */
+        html, body {
             margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background: url('https://static.vecteezy.com/system/resources/previews/020/665/646/large_2x/wood-brown-grain-texture-dark-wall-background-top-view-of-wooden-table-with-copy-space-free-photo.jpg') no-repeat center center;
+            background: url('https://source.unsplash.com/1600x900/?desk,wood') no-repeat center center;
             background-size: cover;
-            overflow: hidden;
         }
 
         .container {
@@ -32,34 +34,41 @@
             border: 10px solid white;
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
             cursor: grab;
-            transform: rotate(calc(-5deg + 10deg * var(--rotation)));
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            border-radius: 10px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.5s ease;
+        }
+
+        /* Paper bending effect */
+        .photo::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%);
+            border-radius: 10px;
+            pointer-events: none;
         }
 
         .photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transform: rotateX(10deg) rotateY(-10deg);
         }
 
-        .photo:hover {
-            box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.4);
+        .photo:hover img {
+            transform: rotateX(0deg) rotateY(0deg);
         }
 
         .photo:active {
             cursor: grabbing;
         }
 
-        .photo.open {
-            transform: scale(1.2) rotate(0deg);
-            z-index: 10;
-        }
-
-        /* Lightbox (full-screen photo view) */
+        /* Lightbox */
         .lightbox {
             position: fixed;
             top: 0;
@@ -72,7 +81,8 @@
             align-items: center;
             visibility: hidden;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            z-index: 1000;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .lightbox img {
@@ -80,11 +90,42 @@
             max-height: 80%;
             border: 5px solid white;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
         }
 
         .lightbox.show {
             visibility: visible;
             opacity: 1;
+        }
+
+        .lightbox.show img {
+            transform: scale(1);
+        }
+
+        /* Close Button */
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: black;
+            border: none;
+            padding: 10px 15px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 1001;
+            transition: background 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: lightgray;
+        }
+
+        /* Fade-out effect for background photos */
+        .photo.hidden {
+            opacity: 0;
         }
 
     </style>
@@ -93,8 +134,9 @@
 
     <div class="container" id="photoContainer"></div>
 
-    <!-- Lightbox for full-screen view -->
+    <!-- Lightbox -->
     <div class="lightbox" id="lightbox">
+        <button class="close-btn" id="closeBtn">✖</button>
         <img id="lightboxImg" src="" alt="Enlarged Photo">
     </div>
 
@@ -102,6 +144,7 @@
         const container = document.getElementById("photoContainer");
         const lightbox = document.getElementById("lightbox");
         const lightboxImg = document.getElementById("lightboxImg");
+        const closeBtn = document.getElementById("closeBtn");
 
         const images = [
             "https://source.unsplash.com/300x400/?nature",
@@ -114,7 +157,6 @@
         function createPhoto(index) {
             let photo = document.createElement("div");
             photo.classList.add("photo");
-            photo.style.setProperty("--rotation", Math.random());
 
             let img = document.createElement("img");
             img.src = images[index];
@@ -126,10 +168,13 @@
             photo.style.left = `${x}px`;
             photo.style.top = `${y}px`;
 
-            // Add image to the photo frame
+            // Random rotation for natural layout
+            photo.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+
+            // Add image
             photo.appendChild(img);
 
-            // Dragging functionality
+            // Dragging
             Draggable.create(photo, {
                 bounds: "body",
                 inertia: true,
@@ -138,22 +183,48 @@
             });
 
             // Click to open full image
-            photo.addEventListener("click", () => openLightbox(img.src));
+            photo.addEventListener("click", () => openLightbox(img.src, photo));
 
             container.appendChild(photo);
         }
 
-        function openLightbox(imgSrc) {
+        function openLightbox(imgSrc, clickedPhoto) {
             lightboxImg.src = imgSrc;
             lightbox.classList.add("show");
+
+            // Hide all other photos except the clicked one
+            document.querySelectorAll(".photo").forEach(photo => {
+                if (photo !== clickedPhoto) {
+                    photo.classList.add("hidden");
+                }
+            });
+
+            // Smooth zoom-in effect
+            gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
         }
 
-        // Close lightbox on click
-        lightbox.addEventListener("click", () => {
-            lightbox.classList.remove("show");
+        // Close lightbox anywhere
+        lightbox.addEventListener("click", (e) => {
+            if (e.target !== lightboxImg) {
+                closeLightbox();
+            }
         });
 
-        // Create multiple photo papers
+        // Close with button
+        closeBtn.addEventListener("click", () => {
+            closeLightbox();
+        });
+
+        function closeLightbox() {
+            gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
+                lightbox.classList.remove("show");
+                document.querySelectorAll(".photo").forEach(photo => {
+                    photo.classList.remove("hidden");
+                });
+            }});
+        }
+
+        // Create multiple papers
         for (let i = 0; i < images.length; i++) {
             createPhoto(i);
         }
