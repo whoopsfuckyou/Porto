@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draggable Photo Gallery</title>
+    <title>Interactive Photo Gallery</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
     <style>
@@ -38,6 +38,19 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            border-radius: 8px;
+        }
+
+        /* Curved Paper Effect */
+        .photo::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%);
+            border-radius: 8px;
+            transform: rotate(3deg);
+            pointer-events: none;
         }
 
         .photo img {
@@ -59,7 +72,7 @@
             z-index: 10;
         }
 
-        /* Lightbox (full-screen photo view) */
+        /* Lightbox (Full-screen photo view) */
         .lightbox {
             position: fixed;
             top: 0;
@@ -72,7 +85,8 @@
             align-items: center;
             visibility: hidden;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            z-index: 1000;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .lightbox img {
@@ -80,11 +94,37 @@
             max-height: 80%;
             border: 5px solid white;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease;
         }
 
         .lightbox.show {
             visibility: visible;
             opacity: 1;
+        }
+
+        /* Zoom in effect */
+        .zoomed {
+            transform: scale(1.5);
+        }
+
+        /* Close Button */
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: black;
+            border: none;
+            padding: 10px 15px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 1001;
+            transition: background 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: lightgray;
         }
 
     </style>
@@ -95,6 +135,7 @@
 
     <!-- Lightbox for full-screen view -->
     <div class="lightbox" id="lightbox">
+        <button class="close-btn" id="closeBtn">✖</button>
         <img id="lightboxImg" src="" alt="Enlarged Photo">
     </div>
 
@@ -102,6 +143,7 @@
         const container = document.getElementById("photoContainer");
         const lightbox = document.getElementById("lightbox");
         const lightboxImg = document.getElementById("lightboxImg");
+        const closeBtn = document.getElementById("closeBtn");
 
         const images = [
             "https://i.postimg.cc/65YGYvjN/1080x1350.png",
@@ -148,9 +190,28 @@
             lightbox.classList.add("show");
         }
 
-        // Close lightbox on click
-        lightbox.addEventListener("click", () => {
+        // Close lightbox on click anywhere
+        lightbox.addEventListener("click", (e) => {
+            if (e.target !== lightboxImg) {
+                lightbox.classList.remove("show");
+                lightboxImg.classList.remove("zoomed");
+            }
+        });
+
+        // Close lightbox with button
+        closeBtn.addEventListener("click", () => {
             lightbox.classList.remove("show");
+            lightboxImg.classList.remove("zoomed");
+        });
+
+        // Zoom in/out with scroll
+        lightboxImg.addEventListener("wheel", (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                lightboxImg.classList.add("zoomed");
+            } else {
+                lightboxImg.classList.remove("zoomed");
+            }
         });
 
         // Create multiple photo papers
