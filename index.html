@@ -16,7 +16,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: url('https://source.unsplash.com/1600x900/?desk,wood') no-repeat center center;
+            background: url('https://static.vecteezy.com/system/resources/previews/020/665/646/large_2x/wood-brown-grain-texture-dark-wall-background-top-view-of-wooden-table-with-copy-space-free-photo.jpg') no-repeat center center;
             background-size: cover;
         }
 
@@ -42,30 +42,10 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.5s ease;
         }
 
-        /* Paper bending effect */
-        .photo::before {
-            content: "";
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom right, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%);
-            border-radius: 10px;
-            pointer-events: none;
-        }
-
         .photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: rotateX(10deg) rotateY(-10deg);
-        }
-
-        .photo:hover img {
-            transform: rotateX(0deg) rotateY(0deg);
-        }
-
-        .photo:active {
-            cursor: grabbing;
         }
 
         /* Lightbox */
@@ -86,8 +66,8 @@
         }
 
         .lightbox img {
-            max-width: 80%;
-            max-height: 80%;
+            max-width: 90%;
+            max-height: 90%;
             border: 5px solid white;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
             transform: scale(0.8);
@@ -123,11 +103,6 @@
             background: lightgray;
         }
 
-        /* Fade-out effect for background photos */
-        .photo.hidden {
-            opacity: 0;
-        }
-
     </style>
 </head>
 <body>
@@ -146,12 +121,13 @@
         const lightboxImg = document.getElementById("lightboxImg");
         const closeBtn = document.getElementById("closeBtn");
 
+        // Define portrait images & their corresponding landscape versions
         const images = [
-            "https://source.unsplash.com/300x400/?nature",
-            "https://source.unsplash.com/300x400/?architecture",
-            "https://source.unsplash.com/300x400/?portrait",
-            "https://source.unsplash.com/300x400/?abstract",
-            "https://source.unsplash.com/300x400/?technology"
+            { portrait: "https://i.postimg.cc/65YGYvjN/1080x1350.png", landscape: "https://i.postimg.cc/L8g6LYGD/1640X856.png" },
+            { portrait: "https://source.unsplash.com/300x400/?architecture", landscape: "https://source.unsplash.com/1280x720/?architecture" },
+            { portrait: "https://source.unsplash.com/300x400/?portrait", landscape: "https://source.unsplash.com/1280x720/?art" },
+            { portrait: "https://source.unsplash.com/300x400/?abstract", landscape: "https://source.unsplash.com/1280x720/?pattern" },
+            { portrait: "https://source.unsplash.com/300x400/?technology", landscape: "https://source.unsplash.com/1280x720/?tech" }
         ];
 
         function createPhoto(index) {
@@ -159,7 +135,7 @@
             photo.classList.add("photo");
 
             let img = document.createElement("img");
-            img.src = images[index];
+            img.src = images[index].portrait;
             img.alt = `Photo ${index + 1}`;
 
             // Random positioning
@@ -182,22 +158,15 @@
                 type: "x,y",
             });
 
-            // Click to open full image
-            photo.addEventListener("click", () => openLightbox(img.src, photo));
+            // Click to open corresponding landscape image
+            photo.addEventListener("click", () => openLightbox(images[index].landscape));
 
             container.appendChild(photo);
         }
 
-        function openLightbox(imgSrc, clickedPhoto) {
+        function openLightbox(imgSrc) {
             lightboxImg.src = imgSrc;
             lightbox.classList.add("show");
-
-            // Hide all other photos except the clicked one
-            document.querySelectorAll(".photo").forEach(photo => {
-                if (photo !== clickedPhoto) {
-                    photo.classList.add("hidden");
-                }
-            });
 
             // Smooth zoom-in effect
             gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
@@ -218,9 +187,6 @@
         function closeLightbox() {
             gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
                 lightbox.classList.remove("show");
-                document.querySelectorAll(".photo").forEach(photo => {
-                    photo.classList.remove("hidden");
-                });
             }});
         }
 
