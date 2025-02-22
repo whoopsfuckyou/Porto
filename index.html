@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Photo Paper</title>
+    <title>Interactive Draggable Papers</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -11,65 +13,113 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: url('https://static.vecteezy.com/system/resources/previews/002/666/476/large_2x/black-blank-slate-table-texture-background-free-photo.JPG') no-repeat center center;
+            background: url('https://source.unsplash.com/1600x900/?wood,table') no-repeat center center;
             background-size: cover;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
         }
 
         .photo-paper {
-            width: 300px;
-            height: 400px;
-            background: url('https://source.unsplash.com/300x400/?paper') no-repeat center center;
-            background-size: cover;
+            width: 250px;
+            height: 350px;
             position: absolute;
-            cursor: grab;
-            transition: transform 0.2s ease;
+            background: url('https://source.unsplash.com/250x350/?paper') no-repeat center center;
+            background-size: cover;
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
             border-radius: 10px;
-            transform: rotate(-5deg);
+            cursor: grab;
+            transform: rotate(calc(-10deg + 20deg * var(--rotation)));
+            transition: transform 0.3s ease;
         }
 
-        .photo-paper:active {
-            cursor: grabbing;
+        .photo-paper.open {
+            transform: rotate(0deg) scale(1.1);
+            z-index: 10;
         }
 
+        .content {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .content button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div class="photo-paper" id="photo"></div>
+    <div class="container" id="paperContainer"></div>
+
+    <div class="content" id="contentBox">
+        <p>Paper Opened! Here's the content inside.</p>
+        <button onclick="closeContent()">Close</button>
+    </div>
 
     <script>
-        let photo = document.getElementById("photo");
+        const container = document.getElementById("paperContainer");
+        const papers = 5; // Number of papers
 
-        // Dragging Functionality
-        let isDragging = false, offsetX, offsetY;
+        function createPaper(index) {
+            let paper = document.createElement("div");
+            paper.classList.add("photo-paper");
+            paper.style.setProperty("--rotation", Math.random()); // Random rotation
 
-        photo.addEventListener("mousedown", (e) => {
-            isDragging = true;
-            offsetX = e.clientX - photo.getBoundingClientRect().left;
-            offsetY = e.clientY - photo.getBoundingClientRect().top;
-            photo.style.transition = "none";
-        });
+            // Random positioning
+            let x = Math.random() * (window.innerWidth - 300);
+            let y = Math.random() * (window.innerHeight - 400);
+            paper.style.left = `${x}px`;
+            paper.style.top = `${y}px`;
 
-        document.addEventListener("mousemove", (e) => {
-            if (isDragging) {
-                photo.style.left = `${e.clientX - offsetX}px`;
-                photo.style.top = `${e.clientY - offsetY}px`;
-            }
-        });
+            // Dragging functionality with GSAP
+            Draggable.create(paper, {
+                bounds: "body",
+                inertia: true, // Enables physics-based smooth movement
+                edgeResistance: 0.5,
+                type: "x,y",
+            });
 
-        document.addEventListener("mouseup", () => {
-            isDragging = false;
-            photo.style.transition = "transform 0.2s ease";
-        });
+            // Click to open
+            paper.addEventListener("click", () => openPaper(paper));
 
-        // Click Event to "Open" the Paper
-        photo.addEventListener("click", () => {
-            photo.style.transform = "rotate(0deg) scale(1.2)";
-            setTimeout(() => {
-                alert("Paper Opened! Add content here.");
-            }, 300);
-        });
+            container.appendChild(paper);
+        }
+
+        function openPaper(paper) {
+            gsap.to(paper, { scale: 1.1, rotation: 0, duration: 0.3, ease: "power2.out" });
+            paper.classList.add("open");
+            document.getElementById("contentBox").style.display = "block";
+        }
+
+        function closeContent() {
+            document.querySelectorAll(".photo-paper").forEach(paper => {
+                gsap.to(paper, { scale: 1, rotation: Math.random() * 20 - 10, duration: 0.3 });
+                paper.classList.remove("open");
+            });
+            document.getElementById("contentBox").style.display = "none";
+        }
+
+        // Create multiple papers
+        for (let i = 0; i < papers; i++) {
+            createPaper(i);
+        }
     </script>
 
 </body>
