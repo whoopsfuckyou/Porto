@@ -26,6 +26,7 @@
             height: 100vh;
         }
 
+        /* Floating images */
         .photo {
             width: 200px;
             height: 250px;
@@ -48,55 +49,40 @@
             object-fit: cover;
         }
 
-/* Lightbox should always be on top */
-.lightbox {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    visibility: hidden;
-    opacity: 0;
-    z-index: 1000; /* Ensures it's always above everything */
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-/* Hide other images when lightbox is active */
-body.lightbox-open .photo {
-    display: none; /* Hides floating papers */
-}
-
-/* Ensure enlarged image is always on top */
-.lightbox img {
-    max-width: 90%;
-    max-height: 90%;
-    border: 5px solid white;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-    transform: scale(0.8);
-    transition: transform 0.3s ease;
-    z-index: 1001; /* Above everything */
-}
-        
-/* Fade out other photos when enlarged image appears */
-.photo.fade {
-    opacity: 0;
-    pointer-events: none; /* Prevent clicking */
-} 
-
-        .lightbox.show {
-            visibility: visible;
-            opacity: 1;
+        /* Lightbox overlay */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+            opacity: 0;
+            z-index: 1000;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
-        .lightbox.show img {
-            transform: scale(1);
+        /* Enlarged image */
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 5px solid white;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            z-index: 1001;
         }
 
-        /* Close Button */
+        /* Hide floating photos when lightbox is active */
+        body.lightbox-open .photo {
+            display: none;
+        }
+
+        /* Close button */
         .close-btn {
             position: absolute;
             top: 20px;
@@ -115,7 +101,6 @@ body.lightbox-open .photo {
         .close-btn:hover {
             background: lightgray;
         }
-
     </style>
 </head>
 <body>
@@ -129,12 +114,12 @@ body.lightbox-open .photo {
     </div>
 
     <script>
-        const photos = document.querySelectorAll(".photo");
+        const photoContainer = document.getElementById("photoContainer");
         const lightbox = document.getElementById("lightbox");
         const lightboxImg = document.getElementById("lightboxImg");
         const closeBtn = document.getElementById("closeBtn");
 
-        // Define portrait images & their corresponding landscape versions
+        // Image dataset (portrait & landscape)
         const images = [
             { portrait: "https://i.postimg.cc/65YGYvjN/1080x1350.png", landscape: "https://i.postimg.cc/L8g6LYGD/1640X856.png" },
             { portrait: "https://i.postimg.cc/cJNZ3DR1/1080-X1350.png", landscape: "https://i.postimg.cc/Qd7hHLWn/1640X856.png" },
@@ -143,6 +128,7 @@ body.lightbox-open .photo {
             { portrait: "https://i.postimg.cc/9FRjn31F/POPUP.png", landscape: "https://i.postimg.cc/xjF25jv4/1640x856.png" }
         ];
 
+        // Function to create draggable photos
         function createPhoto(index) {
             let photo = document.createElement("div");
             photo.classList.add("photo");
@@ -157,13 +143,13 @@ body.lightbox-open .photo {
             photo.style.left = `${x}px`;
             photo.style.top = `${y}px`;
 
-            // Random rotation for natural layout
+            // Random rotation for natural look
             photo.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
 
-            // Add image
+            // Add image inside div
             photo.appendChild(img);
 
-            // Dragging
+            // Make draggable
             Draggable.create(photo, {
                 bounds: "body",
                 inertia: true,
@@ -171,46 +157,42 @@ body.lightbox-open .photo {
                 type: "x,y",
             });
 
-            // Click to open corresponding landscape image
+            // Click to open lightbox
             photo.addEventListener("click", () => openLightbox(images[index].landscape));
 
-            container.appendChild(photo);
+            photoContainer.appendChild(photo);
         }
 
         // Open Lightbox
-function openLightbox(imgSrc) {
-    lightboxImg.src = imgSrc;
-    lightbox.classList.add("show");
-    document.body.classList.add("lightbox-open"); // Hides floating papers
+        function openLightbox(imgSrc) {
+            lightboxImg.src = imgSrc;
+            lightbox.classList.add("show");
+            document.body.classList.add("lightbox-open"); // Hide floating photos
 
-    // Smooth zoom-in effect
-    gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
-}
-
-// Close Lightbox
-function closeLightbox() {
-    gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
-        lightbox.classList.remove("show");
-        document.body.classList.remove("lightbox-open"); // Show floating papers again
-    }});
-}
-
-// Click outside to close
-lightbox.addEventListener("click", (e) => {
-    if (e.target !== lightboxImg) {
-        closeLightbox();
-    }
-});
-
-// Close button click
-closeBtn.addEventListener("click", () => {
-    closeLightbox();
-});
-
-        // Create multiple papers
-        for (let i = 0; i < images.length; i++) {
-            createPhoto(i);
+            // Smooth zoom-in effect
+            gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
         }
+
+        // Close Lightbox
+        function closeLightbox() {
+            gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
+                lightbox.classList.remove("show");
+                document.body.classList.remove("lightbox-open"); // Show floating photos again
+            }});
+        }
+
+        // Click outside to close lightbox
+        lightbox.addEventListener("click", (e) => {
+            if (e.target !== lightboxImg) {
+                closeLightbox();
+            }
+        });
+
+        // Close button event
+        closeBtn.addEventListener("click", closeLightbox);
+
+        // Generate floating photos
+        images.forEach((_, i) => createPhoto(i));
     </script>
 
 </body>
