@@ -61,17 +61,16 @@
     align-items: center;
     visibility: hidden;
     opacity: 0;
-    z-index: 1000; /* Ensures it's always on top */
+    z-index: 1000; /* Ensures it's always above everything */
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-        
-/* Fade out other photos when enlarged image appears */
-.photo.fade {
-    opacity: 0;
-    pointer-events: none; /* Prevent clicking */
-} 
-        
-/* Enlarged image should always appear on top */
+
+/* Hide other images when lightbox is active */
+body.lightbox-open .photo {
+    display: none; /* Hides floating papers */
+}
+
+/* Ensure enlarged image is always on top */
 .lightbox img {
     max-width: 90%;
     max-height: 90%;
@@ -81,6 +80,12 @@
     transition: transform 0.3s ease;
     z-index: 1001; /* Above everything */
 }
+        
+/* Fade out other photos when enlarged image appears */
+.photo.fade {
+    opacity: 0;
+    pointer-events: none; /* Prevent clicking */
+} 
 
         .lightbox.show {
             visibility: visible;
@@ -124,7 +129,7 @@
     </div>
 
     <script>
-        const container = document.getElementById("photoContainer");
+        const photos = document.querySelectorAll(".photo");
         const lightbox = document.getElementById("lightbox");
         const lightboxImg = document.getElementById("lightboxImg");
         const closeBtn = document.getElementById("closeBtn");
@@ -172,43 +177,35 @@
             container.appendChild(photo);
         }
 
-        function openLightbox(imgSrc) {
-            lightboxImg.src = imgSrc;
-            lightbox.classList.add("show");
+        // Open Lightbox
+function openLightbox(imgSrc) {
+    lightboxImg.src = imgSrc;
+    lightbox.classList.add("show");
+    document.body.classList.add("lightbox-open"); // Hides floating papers
 
-            // Hide other photos
-              photos.forEach(photo => {
-              photo.classList.add("fade");
-              photo.style.zIndex = "0";  // Push behind everything
-              });
+    // Smooth zoom-in effect
+    gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
+}
 
-             // Smooth zoom-in effect
-            gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
-            }
-
-            // Close lightbox anywhere
-            lightbox.addEventListener("click", (e) => {
-            if (e.target !== lightboxImg) {
-            closeLightbox();
-            }
-            });
-
-            /// Close with button
-            closeBtn.addEventListener("click", () => {
-            closeLightbox();
-            });
-
-            function closeLightbox() {
-            gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
-            lightbox.classList.remove("show");
-
-        // Restore other photos
-        photos.forEach(photo => {
-            photo.classList.remove("fade");
-            photo.style.zIndex = "";  // Reset z-index
-        });
+// Close Lightbox
+function closeLightbox() {
+    gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
+        lightbox.classList.remove("show");
+        document.body.classList.remove("lightbox-open"); // Show floating papers again
     }});
 }
+
+// Click outside to close
+lightbox.addEventListener("click", (e) => {
+    if (e.target !== lightboxImg) {
+        closeLightbox();
+    }
+});
+
+// Close button click
+closeBtn.addEventListener("click", () => {
+    closeLightbox();
+});
 
         // Create multiple papers
         for (let i = 0; i < images.length; i++) {
