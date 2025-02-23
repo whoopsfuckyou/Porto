@@ -48,13 +48,7 @@
             object-fit: cover;
         }
 
-/* Other photo papers should fade when enlarged image appears */
-.photo.fade {
-    opacity: 0;
-    pointer-events: none; /* Prevent interaction */
-}
-
-/* Lightbox always on top */
+/* Lightbox should always be on top */
 .lightbox {
     position: fixed;
     top: 0;
@@ -67,11 +61,17 @@
     align-items: center;
     visibility: hidden;
     opacity: 0;
-    z-index: 1000; /* Ensure it's above all elements */
+    z-index: 1000; /* Ensures it's always on top */
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-
-/* Ensure enlarged image appears on top */
+        
+/* Fade out other photos when enlarged image appears */
+.photo.fade {
+    opacity: 0;
+    pointer-events: none; /* Prevent clicking */
+} 
+        
+/* Enlarged image should always appear on top */
 .lightbox img {
     max-width: 90%;
     max-height: 90%;
@@ -176,27 +176,39 @@
             lightboxImg.src = imgSrc;
             lightbox.classList.add("show");
 
-            // Smooth zoom-in effect
+            // Hide other photos
+              photos.forEach(photo => {
+              photo.classList.add("fade");
+              photo.style.zIndex = "0";  // Push behind everything
+              });
+
+             // Smooth zoom-in effect
             gsap.fromTo(lightboxImg, { scale: 0.8 }, { scale: 1, duration: 0.3, ease: "power2.out" });
-        }
-
-        // Close lightbox anywhere
-        lightbox.addEventListener("click", (e) => {
-            if (e.target !== lightboxImg) {
-                closeLightbox();
             }
-        });
 
-        // Close with button
-        closeBtn.addEventListener("click", () => {
+            // Close lightbox anywhere
+            lightbox.addEventListener("click", (e) => {
+            if (e.target !== lightboxImg) {
             closeLightbox();
-        });
+            }
+            });
 
-        function closeLightbox() {
+            /// Close with button
+            closeBtn.addEventListener("click", () => {
+            closeLightbox();
+            });
+
+            function closeLightbox() {
             gsap.to(lightboxImg, { scale: 0.8, duration: 0.3, ease: "power2.in", onComplete: () => {
-                lightbox.classList.remove("show");
-            }});
-        }
+            lightbox.classList.remove("show");
+
+        // Restore other photos
+        photos.forEach(photo => {
+            photo.classList.remove("fade");
+            photo.style.zIndex = "";  // Reset z-index
+        });
+    }});
+}
 
         // Create multiple papers
         for (let i = 0; i < images.length; i++) {
